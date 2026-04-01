@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Form\ConferenceType;
 use App\Matching\Strategy\TagBasedStrategy;
 use App\Message\MatchVolunteerMessage;
+use App\Message\SearchConferenceQuery;
 use App\Search\ConferenceSearchInterface;
 use App\Search\DatabaseConferenceSearch;
 use App\Security\Voter\EditionVoter;
@@ -18,12 +19,20 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\HandleTrait;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class ConferenceController extends AbstractController
 {
+    use HandleTrait;
+
+    public function __construct(
+        MessageBusInterface $messageBus,
+    ) {}
+
     // Possible solution to SF_ADVANCED exercise 14
     //#[IsGranted(new Expression('is_granted("ROLE_ORGANIZER") or is_granted("ROLE_WEBSITE")'))]
     #[Route('/conference/new', name: 'app_conference_new', methods: ['GET', 'POST'])]
@@ -69,9 +78,11 @@ class ConferenceController extends AbstractController
 
     #[Route('/conference/search', name: 'app_conference_search', methods: ['GET'])]
     #[Template('conference/list.html.twig')]
-    public function search(Request $request, ConferenceSearchInterface $search): array
+    public function search(Request $request): array
     {
-        return ['conferences' => $search->search($request->query->get('name'))];
+        $conferences = $this->handle(new SearchConferenceQuery(name: $request->query->get('name')));
+
+        return ['conferences' => $conferences];
     }
 
     #[Route('/conference/{id}', name: 'app_conference_show', requirements: ['id' => '\d+'], methods: ['GET'])]
