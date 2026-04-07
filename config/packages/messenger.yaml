@@ -28,6 +28,22 @@ framework:
                     - App\Middleware\PriorityRoutingMiddleware
                     - App\Middleware\LoggingMiddleware
 
+            command.bus:
+                default_middleware: false
+                middleware:
+                    - 'add_bus_name_stamp_middleware'
+                    - App\Middleware\PriorityRoutingMiddleware
+                    - App\Middleware\LoggingMiddleware
+                    - 'validation'
+                    - 'handle_message'
+                    - 'doctrine_transaction'
+
+            query.bus:
+                default_middleware: false
+                middleware:
+                    - App\Middleware\LoggingMiddleware
+                    - 'handle_message'
+
         routing:
             Symfony\Component\Mailer\Messenger\SendEmailMessage: normal_priority
             Symfony\Component\Notifier\Message\ChatMessage: normal_priority
